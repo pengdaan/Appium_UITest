@@ -26,20 +26,23 @@ class Login(unittest.TestCase):
 
     def test_ipLogin(self):
             u'''使用phone账号登录'''
-            self.user = self.data['login']['user']
-            self.psw = self.data['login']['pwd']
+            self.user = self.data['login_01']['user']
+            self.psw = self.data['login_01']['pwd']
+            self.status=self.data['login_01']['status']
+            self.assert_expected=self.data['login_01']['assert']
             self.wps.makeprotocol()
             try:
                 self.wps.Avatar()
             except:
                 self.wps.Table_my()
-            self.wps.iplogin(self.user, self.psw)
-
+            self.assert_return=self.wps.iplogin(self.user, self.psw,self.status)
+            self.assertEqual(self.assert_expected, self.assert_return, msg='fail resons:%s !=%s' % (self.assert_expected, self.assert_return))
 
 
     def tearDown(self):
-         self.driver.quit()
-    #     self.driver.close()
+        pass
+        # self.driver.quit()
+        # self.driver.close()
 
 
 

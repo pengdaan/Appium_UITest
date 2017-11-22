@@ -42,5 +42,8 @@ phonepwd=('id,cn.wps.moffice_eng:id/home_roaming_login_input_password')
 #手机或邮箱页面登陆按钮
 iplogin=('c,android.widget.Button')
 
-#登录成功后断言元素
-loginsucess=('id,cn.wps.moffice_eng:id/titlebar_back_icon')
+#登录成功后返回个人中心
+loginsucess=('id,cn.wps.moffice_eng:id/history_titlebar_backbtn')
+
+#获取个人中心用户名
+username=('id,cn.wps.moffice_eng:id/home_my_roaming_userinfo_name')

@@ -1,3 +1,13 @@
-login:
+login_01:
+  Title: '登录成功'
   user: '13728142737'
   pwd: 'peng1992'
+  status: '1'
+  assert: 'leo_peng'
+
+login_02:
+  Title: '账号为空'
+  user: '13728142737'
+  pwd: ''
+  status: '2'
+  assert: 'leo_peng'

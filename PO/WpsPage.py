@@ -57,7 +57,7 @@ class Wps(Base):
         self.driver.clickButton(QQlogin)
 
 
-    def iplogin(self,user,pwd):
+    def iplogin(self,user,pwd,status):
         '''
         使用手机号码登陆
         :return:
@@ -66,6 +66,25 @@ class Wps(Base):
         self.driver.send_keys(myphone,user)
         self.driver.send_keys(phonepwd,pwd)
         self.driver.clickButton(iplogin)
+        time.sleep(5)
+        try:
+            self.driver.clickButton(loginsucess)
+            if status==1:
+                #self.driver.clickButton(loginsucess)
+                self.text_fail = self.driver.getText(username)
+                return self.text_fail
+        except:
+
+            if status==2:
+                print('逻辑未实现2')
+                pass
+            elif status==3:
+                print('逻辑未实现3')
+                pass
+            else:
+                print('逻辑未实现4')
+                pass
+
 
 
 
