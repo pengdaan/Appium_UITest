@@ -26,7 +26,6 @@ class Wps(Base):
         self.faile.close()
 
 
-
     def makeprotocol(self,status=True):
         '''
         app开始使用页面
@@ -49,7 +48,6 @@ class Wps(Base):
         Avatarlogin = self.data['Avatarlogin']
         self.driver.clickButton(Avatarlogin)
 
-
     def Table_my(self):
         '''
         进入个人中心页面，点击我的进入登录页
@@ -58,9 +56,7 @@ class Wps(Base):
         Table_my = self.data['Table_my']
         mylogin = self.data['mylogin']
         self.driver.clickButton(Table_my)
-
         self.driver.clickButton(mylogin)
-
 
     def qqlogin(self,user,pwd):
         '''
@@ -75,7 +71,7 @@ class Wps(Base):
         self.driver.send_keys(qqUser,user)
         self.driver.send_keys(qqpwd,pwd)
         self.driver.clickButton(QQlogin)
-
+        time.sleep(5)
 
     def iplogin(self,user,pwd,status):
         '''

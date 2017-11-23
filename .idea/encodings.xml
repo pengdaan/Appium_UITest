@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
+    <file url="file://$PROJECT_DIR$/HtmlTestRunner" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/HtmlTestRunner-master" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/HTMLTestRunner.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/HtmlTestRunner-master" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/run_case.py" charset="UTF-8" />
     <file url="PROJECT" charset="GBK" />
   </component>
 </project>

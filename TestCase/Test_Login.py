@@ -12,7 +12,9 @@ from public.CommonDriver import *
 import os
 from logger import logger
 path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 class Login(unittest.TestCase):
+
     def setUp(self):
         title=u'登录测试'
         self.log=logger.Logger(title)
@@ -22,15 +24,20 @@ class Login(unittest.TestCase):
         self.data = yaml.load(self.faile)
         self.faile.close()
 
-
     def test_QQLogin(self):
         u'''使用QQ账号登录'''
-        self.wps.makeprotocol()
+
         try:
-            self.wps.Avatar()
+            self.wps.makeprotocol(status=True)
+            try:
+                self.wps.Avatar()
+            except:
+                self.wps.Table_my()
+            self.wps.qqlogin('321321', '176')
+
         except:
-            self.wps.Table_my()
-        self.wps.qqlogin('321321', '176')
+            self.driver.launch_app()
+
 
     def test_ipLogin(self):
             u'''使用phone账号登录'''
@@ -53,8 +60,7 @@ class Login(unittest.TestCase):
 
     def tearDown(self):
         self.driver.quit()
-        # self.driver.close()
-        #pass
+
 
 
 
