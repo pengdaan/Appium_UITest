@@ -1,5 +1,11 @@
 # -*- coding: utf-8 -*-
+# @Time    : 2017/11/23 10:50
+# @Author  : Leo_Peng
+# @File    : BasePage.py
+# @Software: PyCharm
 import os
+
+
 class Base:
     app = os.path.abspath(
         os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + '/App', 'moffice_10.6.2_1033.apk'))
