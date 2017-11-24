@@ -1,10 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8">
+    <file url="file://$PROJECT_DIR$/Data" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/HTMLTestRunner12" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/HTMLTestRunner12/__init__.py" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/HTMLTestRunner12/__init__.py" charset="GBK" />
     <file url="file://$PROJECT_DIR$/HtmlTestRunner" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/HtmlTestRunner-master" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/Result/2017-11-24/js" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/HTMLTestRunner(饼状图).py" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/public/HTMLTestRunner.py" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/public/HtmlTestRunner-master" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/HTMLTestRunner.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/HTMLTestRunner.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/HTMLTestRunner11.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/HTMLTestRunner111.py" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/public/Result/HTMLTestRunner.py" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/public/run_case.py" charset="UTF-8" />
     <file url="PROJECT" charset="GBK" />
   </component>

@@ -20,7 +20,7 @@ Avatarlogin : 'id,cn.wps.moffice_eng:id/home_my_roaming_userinfo_pic'
 qqUser : 'xpath,//android.widget.EditText[@content-desc="支持QQ号/邮箱/手机号登录"]'
 
 # QQ密码输入框
-qqpwd : 'c,android.widget.EditText'
+qqpwd : 'c,android.widget.EditText1'
 
 # QQ登录页面登录按钮
 QQlogin : 'xpath,//android.view.View[@content-desc="登 录"]'

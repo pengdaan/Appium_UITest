@@ -26,37 +26,53 @@ class Login(unittest.TestCase):
 
     def test_QQLogin(self):
         u'''使用QQ账号登录'''
+        self.wps.makeprotocol(status=True)
+        self.driver.saveScreenshot(name='Error')
+        self.wps.Table_my()
 
-        try:
-            self.wps.makeprotocol(status=True)
-            try:
-                self.wps.Avatar()
-            except:
-                self.wps.Table_my()
-            self.wps.qqlogin('321321', '176')
+        # try:
+        #     try:
+        #         self.wps.makeprotocol(status=True)
+        #         try:
+        #             self.wps.Avatar()
+        #         except:
+        #             self.wps.Table_my()
+        #             self.wps.qqlogin('321321', '176')
+        #     except:
+        #         #self.driver.saveScreenshot(name='Error')
+        #         self.driver.launch_app()
+        #
+        # except Exception as e:
+        #     self.log.error_log(u'失败原因:%s' % e)
+        #     print('reg1 fail  reson is :%s' % e)
 
-        except:
-            self.driver.launch_app()
 
 
-    def test_ipLogin(self):
-            u'''使用phone账号登录'''
-            try:
-                user = self.data['login_01']['user']
-                psw = self.data['login_01']['pwd']
-                status=self.data['login_01']['status']
-                assert_expected=self.data['login_01']['assert']
-                self.wps.makeprotocol()
-                try:
-                    self.wps.Avatar()
-                except:
-                    self.wps.Table_my()
-                self.assert_return=self.wps.iplogin(user, psw,status=status)
-                self.log.info_log(('input data:username:%s,pwd:%s, test_nu:%s,assert:%s' % (user, psw, status, assert_expected)))
-                self.assertEqual(assert_expected, self.assert_return, msg='fail resons:%s !=%s' % (assert_expected, self.assert_return))
-            except Exception as e:
-                self.log.error_log(u'失败原因:%s'%e)
-                print('reg1 fail  reson is :%s'%e)
+
+
+
+    # def test_ipLogin(self):
+    #         u'''使用phone账号登录'''
+    #         try:
+    #             user = self.data['login_01']['user']
+    #             psw = self.data['login_01']['pwd']
+    #             status=self.data['login_01']['status']
+    #             assert_expected=self.data['login_01']['assert']
+    #             Title=self.data['login_01']['Title']
+    #             self.wps.makeprotocol()
+    #             try:
+    #                 self.wps.Avatar()
+    #             except:
+    #                 self.wps.Table_my()
+    #             self.assert_return=self.wps.iplogin(user, psw,status=status)
+    #             self.log.info_log(('input data:username:%s,pwd:%s, test_nu:%s,assert:%s' % (user, psw, status, assert_expected)))
+    #            # self.driver.saveScreenshot(name=Title)
+    #             print(self.assertEqual(assert_expected, self.assert_return, msg='fail resons:%s !=%s' % (assert_expected, self.assert_return)))
+    #             print('111111')
+    #         except Exception as e:
+    #             self.log.error_log(u'失败原因:%s'%e)
+    #             print('reg1 fail  reson is :%s'%e)
+
 
     def tearDown(self):
         self.driver.quit()

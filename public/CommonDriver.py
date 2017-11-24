@@ -10,7 +10,7 @@ import time
 from appium import webdriver
 from PO.BasePage import Base
 from selenium.webdriver.support.ui import WebDriverWait
-
+path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class CommonDriver(object):
     """
@@ -179,7 +179,7 @@ class CommonDriver(object):
         name：自定义图片的名称
         """
         day = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-        fp = "Result\\" + day + "\\image\\" + day
+        fp = path + "\\Result\\" + day + "\\image\\" + day
         tm = self.saveTime()
         type = ".png"
         if os.path.exists(fp):

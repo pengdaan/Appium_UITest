@@ -1,12 +1,12 @@
 login_01:
-  Title: '登录成功'
+  Title: '手机登录_登录成功'
   user: '13728142737'
   pwd: 'peng1992'
   status: '1'
-  assert: 'leo_peng'
+  assert: 'leo_peng1'
 
 login_02:
-  Title: '账号为空'
+  Title: '手机登录_账号为空'
   user: '13728142737'
   pwd: ''
   status: '2'
