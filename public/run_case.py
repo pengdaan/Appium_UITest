@@ -1,14 +1,13 @@
 #coding=utf-8
 __author__ = 'JennyHui'
 import unittest
-import HtmlTestRunner
-from public import HTMLTestRunner
+from Public import HTMLTestRunner
 import time
 import os
-path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-print(path)
-case_path =path+'/TestCase'
-result =path+'/Result/'
+
+case_path = ".\\TestCase"
+result = ".\\Result\\"
+
 def Creatsuite():
     #定义单元测试容器
     testunit = unittest.TestSuite()
@@ -20,36 +19,33 @@ def Creatsuite():
     for test_suite in discover:
         for casename in test_suite:
             testunit.addTest(casename)
-        print (testunit)
+        print testunit
     return testunit
 
 test_case = Creatsuite()
 
+#获取系统当前时间
+now = time.strftime('%Y-%m-%d-%H_%M_%S', time.localtime(time.time()))
+day = time.strftime('%Y-%m-%d', time.localtime(time.time()))
 
-if __name__ == '__main__':  #下面语句用来生成测试报告
-    unittest.main(testRunner=HtmlTestRunner(output='cal_report',report_title='Android计算器测试报告'))
-# #获取系统当前时间
-# now = time.strftime('%Y-%m-%d-%H_%M_%S', time.localtime(time.time()))
-# day = time.strftime('%Y-%m-%d', time.localtime(time.time()))
-#
-# #定义个报告存放路径，支持相对路径
-# tdresult = result + day
-# if os.path.exists(tdresult):
-#     filename = tdresult + "\\" + now + "_result.html"
-#     fp = open(filename, 'wb')
-#     #定义测试报告
-#     runner = HTMLTestRunner.HTMLTestRunner(stream=fp, title=u'Appium测试报告', description=u'用例详情：')
-#
-#     #运行测试用例
-#     runner.run(test_case)
-#     fp.close()  #关闭报告文件
-# else:
-#     os.mkdir(tdresult)
-#     filename = tdresult + "\\" + now + "_result.html"
-#     fp = open(filename, 'wb')
-#     #定义测试报告
-#     runner = HTMLTestRunner.HTMLTestRunner(stream=fp, title=u'Appium测试报告', description=u'用例详情：')
-#
-#     #运行测试用例
-#     runner.run(test_case)
-#     fp.close()  #关闭报告文件
+#定义个报告存放路径，支持相对路径
+tdresult = result + day
+if os.path.exists(tdresult):
+    filename = tdresult + "\\" + now + "_result.html"
+    fp = file(filename, 'wb')
+    #定义测试报告
+    runner = HTMLTestRunner.HTMLTestRunner(stream=fp, title=u'Appium测试报告', description=u'用例详情：')
+
+    #运行测试用例
+    runner.run(test_case)
+    fp.close()  #关闭报告文件
+else:
+    os.mkdir(tdresult)
+    filename = tdresult + "\\" + now + "_result.html"
+    fp = file(filename, 'wb')
+    #定义测试报告
+    runner = HTMLTestRunner.HTMLTestRunner(stream=fp, title=u'Appium测试报告', description=u'用例详情：')
+
+    #运行测试用例
+    runner.run(test_case)
+    fp.close()  #关闭报告文件
