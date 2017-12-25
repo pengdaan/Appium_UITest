@@ -5,7 +5,6 @@
 # @Software: PyCharm
 
 import time
-from PO.BasePage import Base
 import yaml,os
 path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -13,14 +12,11 @@ path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 app常用操作方法的封装
 '''
 
-class Wps(Base):
+class Wps():
 
     def __init__(self,driver):
-        '''
-        继承父类初始化对象
-        :param driver:
-        '''
-        Base.__init__(self,driver)
+
+        self.driver=driver
         self.faile = open(path + '/Data/ElementData.ymal', 'r', encoding='utf-8')
         self.data = yaml.load(self.faile)
         self.faile.close()
@@ -32,6 +28,7 @@ class Wps(Base):
         :param status:True为加入用户体验计划
         :return:
         '''
+
         protocol = self.data['protocol']
         using_wps = self.data['using_wps']
         if status:

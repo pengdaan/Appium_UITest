@@ -11,24 +11,27 @@ from PO import WpsLoginPage
 from public.CommonDriver import *
 import os
 from logger import logger
+from PO.BasePage import *
 path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class Login(unittest.TestCase):
 
-    def setUp(self):
+    @classmethod
+    def setUp(cls):
         title=u'登录测试'
-        self.log=logger.Logger(title)
-        self.driver=CommonDriver()
-        self.wps = WpsLoginPage.Wps(self.driver)
-        self.faile=open(path + '/Data/LoginData.ymal','r',encoding='utf-8')
-        self.data = yaml.load(self.faile)
-        self.faile.close()
+        cls.log=logger.Logger(title)
+        cls.driver = webdriver.Remote('http://localhost:4723/wd/hub', Base.AppSetting)
+        cls.drivers=CommonDriver(cls.driver)
+        cls.wps = WpsLoginPage.Wps(cls.drivers)
+        cls.faile=open(path + '/Data/LoginData.ymal','r',encoding='utf-8')
+        cls.data = yaml.load(cls.faile)
+        cls.faile.close()
 
-    def test_QQLogin(self):
-        u'''使用QQ账号登录'''
-        self.wps.makeprotocol(status=True)
-        self.driver.saveScreenshot(name='Error')
-        self.wps.Table_my()
+    # def test_QQLogin(self):
+    #     u'''使用QQ账号登录'''
+    #     self.wps.makeprotocol(status=True)
+    #     self.driver.saveScreenshot(name='Error')
+    #     self.wps.Table_my()
 
         # try:
         #     try:
@@ -51,27 +54,25 @@ class Login(unittest.TestCase):
 
 
 
-    # def test_ipLogin(self):
-    #         u'''使用phone账号登录'''
-    #         try:
-    #             user = self.data['login_01']['user']
-    #             psw = self.data['login_01']['pwd']
-    #             status=self.data['login_01']['status']
-    #             assert_expected=self.data['login_01']['assert']
-    #             Title=self.data['login_01']['Title']
-    #             self.wps.makeprotocol()
-    #             try:
-    #                 self.wps.Avatar()
-    #             except:
-    #                 self.wps.Table_my()
-    #             self.assert_return=self.wps.iplogin(user, psw,status=status)
-    #             self.log.info_log(('input data:username:%s,pwd:%s, test_nu:%s,assert:%s' % (user, psw, status, assert_expected)))
-    #            # self.driver.saveScreenshot(name=Title)
-    #             print(self.assertEqual(assert_expected, self.assert_return, msg='fail resons:%s !=%s' % (assert_expected, self.assert_return)))
-    #             print('111111')
-    #         except Exception as e:
-    #             self.log.error_log(u'失败原因:%s'%e)
-    #             print('reg1 fail  reson is :%s'%e)
+    def test_ipLogin(self):
+        u'''使用phone账号登录'''
+        Title = self.data['login_01']['Title']
+        user = self.data['login_01']['user']
+        psw = self.data['login_01']['pwd']
+        status = self.data['login_01']['status']
+        assert_expected = self.data['login_01']['assert']
+        self.wps.makeprotocol()
+        self.wps.Table_my()
+        self.assert_return=self.wps.iplogin(user, psw,status=status)
+        self.log.info_log(('input data:username:%s,pwd:%s, test_nu:%s,assert:%s' % (user, psw, status, assert_expected)))
+        self.assertTrue(False)
+        #self.assertEqual(assert_expected, self.assert_return, msg='fail resons:%s !=%s' % (assert_expected, self.assert_return))
+        #time.sleep(5)
+
+
+
+
+
 
 
     def tearDown(self):

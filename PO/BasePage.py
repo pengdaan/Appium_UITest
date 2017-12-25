@@ -24,8 +24,7 @@ class Base:
         'autoWebview': True  # 直接转换到 WebView 上下文。 默认值 false
     }
 
-    def __init__(self,appium_driver):
-        self.driver = appium_driver
+
 
 
 

@@ -16,14 +16,8 @@ class CommonDriver(object):
     """
     selenium的框架封装，封装后续测试过程中需要用到基础方法和代码
     """
-    def __init__(self):
-
-        driver = webdriver.Remote('http://localhost:4723/wd/hub', Base.AppSetting)
-        try:
-            self.driver = driver
-        except Exception:
-            raise NameError("driver Not Found!")
-
+    def __init__(self,driver):
+        self.driver = driver
 
     def getElement(self, selector):
         """

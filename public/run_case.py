@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 __author__ = 'JennyHui'
 import unittest
-from public import HTMLTestRunner111
+from public.HTMLTestRunner import HTMLTestRunner
 import time
 import os
 path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -36,7 +36,7 @@ if os.path.exists(tdresult):
     filename = tdresult + "\\" + now + "_result.html"
     fp = open(filename, 'wb')
     #定义测试报告
-    runner = HTMLTestRunner111.HTMLTestRunner(stream=fp, title=u'Appium测试报告', description=u'用例详情：')
+    runner = HTMLTestRunner(stream=fp, title=u'Appium测试报告', description=u'用例详情：')
 
     #运行测试用例
     runner.run(test_case)
@@ -46,7 +46,7 @@ else:
     filename = tdresult + "\\" + now + "_result.html"
     fp = open(filename, 'wb')
     #定义测试报告
-    runner = HTMLTestRunner111.HTMLTestRunner(stream=fp, title=u'Appium测试报告', description=u'用例详情：')
+    runner = HTMLTestRunner(stream=fp, title=u'Appium测试报告', description='执行人：leo_peng',verbosity=2,retry=1)
 
     #运行测试用例
     runner.run(test_case)

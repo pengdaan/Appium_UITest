@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#-*- coding: utf-8 -*-
 """
 A TestRunner for use with the Python unit testing framework. It
 generates a HTML report to show the result at a glance.
@@ -6,23 +6,23 @@ generates a HTML report to show the result at a glance.
 The simplest way to use this is to invoke its main method. E.g.
 
     import unittest
-    import HTMLTestRunner12
+    import HTMLTestRunner
 
     ... define your tests ...
 
     if __name__ == '__main__':
-        HTMLTestRunner12.main()
+        HTMLTestRunner.main()
 
 
-For more customization options, instantiates a HTMLTestRunner12 object.
-HTMLTestRunner12 is a counterpart to unittest's TextTestRunner. E.g.
+For more customization options, instantiates a HTMLTestRunner object.
+HTMLTestRunner is a counterpart to unittest's TextTestRunner. E.g.
 
     # output to a file
     fp = file('my_report.html', 'wb')
-    runner = HTMLTestRunner12.HTMLTestRunner12(
+    runner = HTMLTestRunner.HTMLTestRunner(
                 stream=fp,
                 title='My unit test',
-                description='This demonstrates the report output by HTMLTestRunner12.'
+                description='This demonstrates the report output by HTMLTestRunner.'
                 )
 
     # Use an external stylesheet.
@@ -66,19 +66,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # URL: http://tungwaiyip.info/software/HTMLTestRunner.html
 
 __author__ = "Wai Yip Tung"
-__version__ = "0.9.1"
+__version__ = "0.8.3"
+
 
 """
 Change History
-Version 0.9.1
-* 用Echarts添加执行情况统计图 (灰蓝)
-
-Version 0.9.0
-* 改成Python 3.x (灰蓝)
+Version 0.8.4 by GoverSky
+* Add sopport for 3.x
+* Add piechart for resultpiechart
+* Add Screenshot for selenium_case test
+* Add Retry on failed
 
 Version 0.8.3
-* 使用 Bootstrap稍加美化 (灰蓝)
-* 改为中文 (灰蓝)
+* Prevent crash on class or module-level exceptions (Darren Wurf).
 
 Version 0.8.2
 * Show output inline instead of popup window (Viorel Lupu).
@@ -98,28 +98,33 @@ Version in 0.7.1
 
 # TODO: color stderr
 # TODO: simplify javascript using ,ore than 1 class in the class attribute?
-
 import datetime
+
 import sys
-import io
-import time
 import unittest
 from xml.sax import saxutils
 
+PY3K = (sys.version_info[0] > 2)
+if PY3K:
+    import io as StringIO
+else:
+    import StringIO
+import copy
 
 # ------------------------------------------------------------------------
 # The redirectors below are used to capture output during testing. Output
 # sent to sys.stdout and sys.stderr are automatically captured. However
-# in some cases sys.stdout is already cached before HTMLTestRunner12 is
-# invoked (e.g. calling logging.basicConfig). In order to capture those
+# in some cases sys.stdout is already cached before HTMLTestRunner is
+# invoked (e.g. calling logging_demo.basicConfig). In order to capture those
 # output, use the redirectors for the cached stream.
 #
 # e.g.
-#   >>> logging.basicConfig(stream=HTMLTestRunner12.stdout_redirector)
+#   >>> logging_demo.basicConfig(stream=HTMLTestRunner.stdout_redirector)
 #   >>>
 
 class OutputRedirector(object):
     """ Wrapper to redirect stdout or stderr """
+
     def __init__(self, fp):
         self.fp = fp
 
@@ -132,13 +137,13 @@ class OutputRedirector(object):
     def flush(self):
         self.fp.flush()
 
+
 stdout_redirector = OutputRedirector(sys.stdout)
 stderr_redirector = OutputRedirector(sys.stderr)
 
 
 # ----------------------------------------------------------------------
 # Template
-
 
 class Template_mixin(object):
     """
@@ -200,161 +205,140 @@ class Template_mixin(object):
     <meta name="generator" content="%(generator)s"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
     %(stylesheet)s
-    <link href="http://cdn.bootcss.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet">
-    <script type="text/javascript" src="js/echarts.common.min.js"></script>
 </head>
 <body>
-    <script language="javascript" type="text/javascript"><!--
-    output_list = Array();
+<script language="javascript" type="text/javascript">
+output_list = Array();
 
-    /* level - 0:Summary; 1:Failed; 2:All */
-    function showCase(level) {
-        trs = document.getElementsByTagName("tr");
-        for (var i = 0; i < trs.length; i++) {
-            tr = trs[i];
-            id = tr.id;
-            if (id.substr(0,2) == 'ft') {
-                if (level < 1) {
-                    tr.className = 'hiddenRow';
-                }
-                else {
-                    tr.className = '';
-                }
-            }
-            if (id.substr(0,2) == 'pt') {
-                if (level > 1) {
-                    tr.className = '';
-                }
-                else {
-                    tr.className = 'hiddenRow';
-                }
-            }
-        }
-    }
-
-
-    function showClassDetail(cid, count) {
-        var id_list = Array(count);
-        var toHide = 1;
-        for (var i = 0; i < count; i++) {
-            tid0 = 't' + cid.substr(1) + '.' + (i+1);
-            tid = 'f' + tid0;
-            tr = document.getElementById(tid);
-            if (!tr) {
-                tid = 'p' + tid0;
-                tr = document.getElementById(tid);
-            }
-            id_list[i] = tid;
-            if (tr.className) {
-                toHide = 0;
-            }
-        }
-        for (var i = 0; i < count; i++) {
-            tid = id_list[i];
-            if (toHide) {
-                document.getElementById('div_'+tid).style.display = 'none'
-                document.getElementById(tid).className = 'hiddenRow';
+/* level - 0:Summary; 1:Failed; 2:All */
+function showCase(level) {
+    trs = document.getElementsByTagName("tr");
+    for (var i = 0; i < trs.length; i++) {
+        tr = trs[i];
+        id = tr.id;
+        if (id.substr(0,2) == 'ft') {
+            if (level < 1) {
+                tr.className = 'hiddenRow';
             }
             else {
-                document.getElementById(tid).className = '';
+                tr.className = '';
+            }
+        }
+        if (id.substr(0,2) == 'pt') {
+            if (level > 1) {
+                tr.className = '';
+            }
+            else {
+                tr.className = 'hiddenRow';
             }
         }
     }
+}
 
 
-    function showTestDetail(div_id){
-        var details_div = document.getElementById(div_id)
-        var displayState = details_div.style.display
-        // alert(displayState)
-        if (displayState != 'block' ) {
-            displayState = 'block'
-            details_div.style.display = 'block'
+function showClassDetail(cid, count) {
+    var id_list = Array(count);
+    var toHide = 1;
+    for (var i = 0; i < count; i++) {
+        tid0 = 't' + cid.substr(1) + '.' + (i+1);
+        tid = 'f' + tid0;
+        tr = document.getElementById(tid);
+        if (!tr) {
+            tid = 'p' + tid0;
+            tr = document.getElementById(tid);
+        }
+        id_list[i] = tid;
+        if (tr.className) {
+            toHide = 0;
+        }
+    }
+    for (var i = 0; i < count; i++) {
+        tid = id_list[i];
+        if (toHide) {
+            document.getElementById('div_'+tid).style.display = 'none'
+            document.getElementById(tid).className = 'hiddenRow';
         }
         else {
-            details_div.style.display = 'none'
+            document.getElementById(tid).className = '';
         }
     }
+}
 
 
-    function html_escape(s) {
-        s = s.replace(/&/g,'&amp;');
-        s = s.replace(/</g,'&lt;');
-        s = s.replace(/>/g,'&gt;');
-        return s;
+function showTestDetail(div_id){
+    var details_div = document.getElementById(div_id)
+    var displayState = details_div.style.display
+    // alert(displayState)
+    if (displayState != 'block' ) {
+        displayState = 'block'
+        details_div.style.display = 'block'
     }
-
-    /* obsoleted by detail in <div>
-    function showOutput(id, name) {
-        var w = window.open("", //url
-                        name,
-                        "resizable,scrollbars,status,width=800,height=450");
-        d = w.document;
-        d.write("<pre>");
-        d.write(html_escape(output_list[id]));
-        d.write("\n");
-        d.write("<a href='javascript:window.close()'>close</a>\n");
-        d.write("</pre>\n");
-        d.close();
+    else {
+        details_div.style.display = 'none'
     }
-    */
-    --></script>
+}
 
-    <div id="div_base">
-        %(heading)s
-        %(report)s
-        %(ending)s
-        %(chart_script)s
+
+function html_escape(s) {
+    s = s.replace(/&/g,'&amp;');
+    s = s.replace(/</g,'&lt;');
+    s = s.replace(/>/g,'&gt;');
+    return s;
+}
+
+function drawCircle(pass, fail, error){ 
+    var color = ["#6c6","#c60","#c00"];  
+    var data = [pass,fail,error]; 
+    var text_arr = ["pass", "fail", "error"];
+
+    var canvas = document.getElementById("circle");  
+    var ctx = canvas.getContext("2d");  
+    var startPoint=0;
+    var width = 20, height = 10;
+    var posX = 112 * 2 + 20, posY = 30;
+    var textX = posX + width + 5, textY = posY + 10;
+    for(var i=0;i<data.length;i++){  
+        ctx.fillStyle = color[i];  
+        ctx.beginPath();  
+        ctx.moveTo(112,84);   
+        ctx.arc(112,84,84,startPoint,startPoint+Math.PI*2*(data[i]/(data[0]+data[1]+data[2])),false);  
+        ctx.fill();  
+        startPoint += Math.PI*2*(data[i]/(data[0]+data[1]+data[2]));  
+        ctx.fillStyle = color[i];  
+        ctx.fillRect(posX, posY + 20 * i, width, height);  
+        ctx.moveTo(posX, posY + 20 * i);  
+        ctx.font = 'bold 14px';
+        ctx.fillStyle = color[i];
+        var percent = text_arr[i] + ":"+data[i];  
+        ctx.fillText(percent, textX, textY + 20 * i);  
+
+    }
+}
+
+function show_shots(obj) {
+	obj.nextElementSibling.style.display="block";
+
+}
+
+function close_shots(obj) {
+	obj.parentElement.style.display="none";	
+}
+
+</script>
+<div class="piechart">
+    <div>
+        <canvas id="circle" width="350" height="168" </canvas>
     </div>
+</div>
+%(heading)s
+%(report)s
+%(ending)s
+
 </body>
 </html>
-"""  # variables: (title, generator, stylesheet, heading, report, ending, chart_script)
+"""
+    # variables: (title, generator, stylesheet, heading, report, ending)
 
-    ECHARTS_SCRIPT = """
-    <script type="text/javascript">
-        // 基于准备好的dom，初始化echarts实例
-        var myChart = echarts.init(document.getElementById('chart'));
-
-        // 指定图表的配置项和数据
-        var option = {
-            title : {
-                text: '测试执行情况',
-                x:'center'
-            },
-            tooltip : {
-                trigger: 'item',
-                formatter: "{a} <br/>{b} : {c} ({d}%%)"
-            },
-            legend: {
-                orient: 'vertical',
-                left: 'left',
-                data: ['通过','失败','错误']
-            },
-            series : [
-                {
-                    name: '测试执行情况',
-                    type: 'pie',
-                    radius : '60%%',
-                    center: ['50%%', '60%%'],
-                    data:[
-                        {value:%(Pass)s, name:'通过'},
-                        {value:%(fail)s, name:'失败'},
-                        {value:%(error)s, name:'错误'}
-                    ],
-                    itemStyle: {
-                        emphasis: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 0, 0, 0.5)'
-                        }
-                    }
-                }
-            ]
-        };
-
-        // 使用刚指定的配置项和数据显示图表。
-        myChart.setOption(option);
-    </script>
-    """  # variables: (Pass, fail, error)
 
     # ------------------------------------------------------------------------
     # Stylesheet
@@ -364,90 +348,117 @@ class Template_mixin(object):
 
     STYLESHEET_TMPL = """
 <style type="text/css" media="screen">
-    body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%; }
-    table       { font-size: 100%; }
-    pre         { white-space: pre-wrap;word-wrap: break-word; }
+body        { font-family: verdana, arial, helvetica, sans-serif; font-size: 80%; }
+table       { font-size: 100%; }
+pre         { }
 
-    /* -- heading ---------------------------------------------------------------------- */
-    h1 {
-        font-size: 16pt;
-        color: gray;
-    }
-    .heading {
-        margin-top: 0ex;
-        margin-bottom: 1ex;
-    }
+/* -- heading ---------------------------------------------------------------------- */
+h1 {
+	font-size: 16pt;
+	color: gray;
+}
+.heading {
+    margin-top: 0ex;
+    margin-bottom: 1ex;
+}
 
-    .heading .attribute {
-        margin-top: 1ex;
-        margin-bottom: 0;
-    }
+.heading .attribute {
+    margin-top: 1ex;
+    margin-bottom: 0;
+}
 
-    .heading .description {
-        margin-top: 2ex;
-        margin-bottom: 3ex;
-    }
+.heading .description {
+    margin-top: 4ex;
+    margin-bottom: 6ex;
+}
 
-    /* -- css div popup ------------------------------------------------------------------------ */
-    a.popup_link {
-    }
+/* -- css div popup ------------------------------------------------------------------------ */
+a.popup_link {
+}
 
-    a.popup_link:hover {
-        color: red;
-    }
+a.popup_link:hover {
+    color: red;
+}
+.img{
+	width: 50%;
+	height: 50%;
+	border-collapse: collapse;
+    border: 2px solid #777;
+}
 
-    .popup_window {
-        display: none;
-        position: relative;
-        left: 0px;
-        top: 0px;
-        /*border: solid #627173 1px; */
-        padding: 10px;
-        /*background-color: #E6E6D6; */
-        font-family: "Lucida Console", "Courier New", Courier, monospace;
-        text-align: left;
-        font-size: 8pt;
-        /* width: 500px;*/
-    }
+.screenshots {
+    z-index: 100;
+	position:absolute;
+	left: 20%;
+	top: 20%;
+	display: none;
+}
+.close_shots {
+	position:absolute;
+	top:0; left:48%;
+	z-index:99;
+	width:20px;
+}
+.popup_window {
+    display: none;
+    position: relative;
+    left: 0px;
+    top: 0px;
+    /*border: solid #627173 1px; */
+    padding: 10px;
+    background-color: #E6E6D6;
+    font-family: "Lucida Console", "Courier New", Courier, monospace;
+    text-align: left;
+    font-size: 8pt;
+    width: 500px;
+}
 
-    }
-    /* -- report ------------------------------------------------------------------------ */
-    #show_detail_line {
-        margin-top: 3ex;
-        margin-bottom: 1ex;
-    }
-    #result_table {
-        width: 99%;
-    }
-    #header_row {
-        font-weight: bold;
-        color: #303641;
-        background-color: #ebebeb;
-    }
-    #total_row  { font-weight: bold; }
-    .passClass  { background-color: #bdedbc; }
-    .failClass  { background-color: #ffefa4; }
-    .errorClass { background-color: #ffc9c9; }
-    .passCase   { color: #6c6; }
-    .failCase   { color: #FF6600; font-weight: bold; }
-    .errorCase  { color: #c00; font-weight: bold; }
-    .hiddenRow  { display: none; }
-    .testcase   { margin-left: 2em; }
+}
+/* -- report ------------------------------------------------------------------------ */
+#show_detail_line {
+    margin-top: 3ex;
+    margin-bottom: 1ex;
+}
+#result_table {
+    width: 80%;
+    border-collapse: collapse;
+    border: 1px solid #777;
+}
+#header_row {
+    font-weight: bold;
+    color: white;
+    background-color: #777;
+}
+#result_table td {
+    border: 1px solid #777;
+    padding: 2px;
+}
+#total_row  { font-weight: bold; }
+.passClass  { background-color: #6c6; }
+.failClass  { background-color: #c60; }
+.errorClass { background-color: #c00; }
+.passCase   { color: #6c6; }
+.failCase   { color: #c60; font-weight: bold; }
+.errorCase  { color: #c00; font-weight: bold; }
+.hiddenRow  { display: none; }
+.testcase   { margin-left: 2em; }
 
 
-    /* -- ending ---------------------------------------------------------------------- */
-    #ending {
-    }
+/* -- ending ---------------------------------------------------------------------- */
+#ending {
+}
 
-    #div_base {
-                position:absolute;
-                top:0%;
-                left:5%;
-                right:5%;
-                width: auto;
-                height: auto;
-                margin: -15px 0 0 0;
-    }
+
+.piechart{  
+    position:absolute;  ;
+    top:20px;  
+    left:300px; 
+    width: 200px;
+    float: left;
+    display:  inline;
+}
+
+
 </style>
 """
 
@@ -455,13 +466,12 @@ class Template_mixin(object):
     # Heading
     #
 
-    HEADING_TMPL = """
-    <div class='page-header'>
-        <h1>%(title)s</h1>
-    %(parameters)s
-    </div>
-    <div style="float: left;width:50%%;"><p class='description'>%(description)s</p></div>
-    <div id="chart" style="width:50%%;height:400px;float:left;"></div>
+    HEADING_TMPL = """<div class='heading'>
+<h1>%(title)s</h1>
+%(parameters)s
+<p class='description'>%(description)s</p>
+</div>
+
 """  # variables: (title, parameters, description)
 
     HEADING_ATTRIBUTE_TMPL = """<p class='attribute'><strong>%(name)s:</strong> %(value)s</p>
@@ -471,68 +481,76 @@ class Template_mixin(object):
     # Report
     #
 
-    REPORT_TMPL = u"""
-    <div class="btn-group btn-group-sm">
-        <button class="btn btn-default" onclick='javascript:showCase(0)'>总结</button>
-        <button class="btn btn-default" onclick='javascript:showCase(1)'>失败</button>
-        <button class="btn btn-default" onclick='javascript:showCase(2)'>全部</button>
-    </div>
-    <p></p>
-    <table id='result_table' class="table table-bordered">
-        <colgroup>
-            <col align='left' />
-            <col align='right' />
-            <col align='right' />
-            <col align='right' />
-            <col align='right' />
-            <col align='right' />
-        </colgroup>
-        <tr id='header_row'>
-            <td>测试套件/测试用例</td>
-            <td>总数</td>
-            <td>通过</td>
-            <td>失败</td>
-            <td>错误</td>
-            <td>查看</td>
-            <td>Screenshot</td>
-            
-        </tr>
-        %(test_list)s
-        <tr id='total_row'>
-            <td>总计</td>
-            <td>%(count)s</td>
-            <td>%(Pass)s</td>
-            <td>%(fail)s</td>
-            <td>%(error)s</td>
-            <td>%(image)s</td>
-            <td>点击缩略图</td>
-        </tr>
-    </table>
-"""  # variables: (test_list, count, Pass, fail, error)
+    REPORT_TMPL = """
+<p id='show_detail_line'>显示
+<a href='javascript:showCase(0)'>概要</a>
+<a href='javascript:showCase(1)'>失败</a>
+<a href='javascript:showCase(2)'>所有</a>
+</p>
 
-    REPORT_CLASS_TMPL = u"""
-    <tr class='%(style)s'>
-        <td>%(desc)s</td>
-        <td>%(count)s</td>
-        <td>%(Pass)s</td>
-        <td>%(fail)s</td>
-        <td>%(error)s</td>
-        <td colspan="2"><a href="javascript:showClassDetail('%(cid)s',%(count)s)">详情</a></td>
+<table id='result_table'>
+<colgroup>
+<col align='left' />
+<col align='right' />
+<col align='right' />
+<col align='right' />
+<col align='right' />
+<col align='right' />
+<col align='right' />
+</colgroup>
+<tr id='header_row'>
+    <td>测试组/测试用例</td>
+    <td>总数</td>
+    <td>通过</td>
+    <td>失败</td>
+    <td>错误</td>
+    <td>视图</td>
+    <td>错误截图</td>
+</tr>
+%(test_list)s
+<tr id='total_row'>
+    <td>统计</td>
+    <td>%(count)s</td>
+    <td>%(Pass)s</td>
+    <td>%(fail)s</td>
+    <td>%(error)s</td>
+    <td>&nbsp;</td>
+    <td>&nbsp;</td>
+</tr>
+</table>
+<script>
+    drawCircle(%(Pass)s, %(fail)s, %(error)s)
+</script>
+"""
+    # variables: (test_list, count, Pass, fail, error)
 
-        
-    </tr>
+    REPORT_CLASS_TMPL = r"""
+<tr class='%(style)s'>
+    <td>%(desc)s</td>
+    <td>%(count)s</td>
+    <td>%(Pass)s</td>
+    <td>%(fail)s</td>
+    <td>%(error)s</td>
+    <td><a href="javascript:showClassDetail('%(cid)s',%(count)s)">详情</a></td>
+    <td>&nbsp;</td>
+</tr>
 """  # variables: (style, desc, count, Pass, fail, error, cid)
 
     REPORT_TEST_WITH_OUTPUT_TMPL = r"""
 <tr id='%(tid)s' class='%(Class)s'>
-    <td class='%(style)s'><div class='testcase'>%(desc)s</div></td>
+    <td ><div class='testcase'>%(desc)s</div></td>
     <td colspan='5' align='center'>
 
     <!--css div popup start-->
+    <span class='status %(style)s'>
     <a class="popup_link" onfocus='this.blur();' href="javascript:showTestDetail('div_%(tid)s')" >
-        %(status)s</a>
+        %(status)s</a></span>
 
     <div id='div_%(tid)s' class="popup_window">
+        <div style='text-align: right; color:red;cursor:pointer'>
+        <a onfocus='this.blur();' onclick="document.getElementById('div_%(tid)s').style.display = 'none' " >
+           [x]</a>
+        </div>
         <pre>
         %(script)s
         </pre>
@@ -540,36 +558,39 @@ class Template_mixin(object):
     <!--css div popup end-->
 
     </td>
-    <td align='center'>
-    <a target="_blank" href="%(image)s" title="%(image)s ">
-    <img src="..\..\data\img.png" height=20 width=20 border=0 /></a>
-    </td>
+    <td>%(img)s</td>
 </tr>
-"""  # variables: (tid, Class, style, desc, status)
+"""  # variables: (tid, Class, style, desc, status,img)
 
     REPORT_TEST_NO_OUTPUT_TMPL = r"""
 <tr id='%(tid)s' class='%(Class)s'>
-    <td class='%(style)s'><div class='testcase'>%(desc)s</div></td>
-    <td colspan='5' align='center'>%(status)s</td>
+    <td><div class='testcase'>%(desc)s</div></td>
+    <td colspan='5' align='center'><span class='status %(style)s'>%(status)s</span></td>
+    <td>%(img)s</td>
 </tr>
-"""  # variables: (tid, Class, style, desc, status)
+"""  # variables: (tid, Class, style, desc, status,img)
 
-    REPORT_TEST_OUTPUT_TMPL = r"""%(id)s: %(output)s"""  # variables: (id, output)
+    REPORT_TEST_OUTPUT_TMPL = r"""
+%(id)s: %(output)s
+"""  # variables: (id, output)
 
     # ------------------------------------------------------------------------
     # ENDING
     #
-    REPORT_TEST_OUTPUT_IMAGE = r"""
-    %(screenshot)s
-    """
-
-    REPORT_TEST_OUTPUT_CASEID = r"""
-    %(case_id)s
-    """
 
     ENDING_TMPL = """<div id='ending'>&nbsp;</div>"""
 
-# -------------------- The end of the Template class -------------------
+    # -------------------- The end of the Template class -------------------
+
+    def __getattribute__(self, item):
+        value = object.__getattribute__(self, item)
+        if PY3K:
+            return value
+        else:
+            if isinstance(value, str):
+                return value.decode("utf-8")
+            else:
+                return value
 
 
 TestResult = unittest.TestResult
@@ -579,14 +600,13 @@ class _TestResult(TestResult):
     # note: _TestResult is a pure representation of results.
     # It lacks the output and reporting ability compares to unittest._TextTestResult.
 
-    def __init__(self, verbosity=1):
+    def __init__(self, verbosity=1, retry=0):
         TestResult.__init__(self)
         self.stdout0 = None
         self.stderr0 = None
         self.success_count = 0
         self.failure_count = 0
         self.error_count = 0
-        self.image_view = 0
         self.verbosity = verbosity
 
         # result is a list of result in 4 tuple
@@ -597,12 +617,14 @@ class _TestResult(TestResult):
         #   stack trace,
         # )
         self.result = []
-        self.subtestlist = []
+        self.retry = retry
+        self.trys = 0
+        self.status = 0
 
     def startTest(self, test):
         TestResult.startTest(self, test)
-        # just one buffer for both stdout and stderr
-        self.outputBuffer = io.StringIO()
+        test.img = ""
+        self.outputBuffer = StringIO.StringIO()
         stdout_redirector.fp = self.outputBuffer
         stderr_redirector.fp = self.outputBuffer
         self.stdout0 = sys.stdout
@@ -626,27 +648,52 @@ class _TestResult(TestResult):
         # Usually one of addSuccess, addError or addFailure would have been called.
         # But there are some path in unittest that would bypass this.
         # We must disconnect stdout in stopTest(), which is guaranteed to be called.
+
+        if self.retry:
+            if self.status == 1:
+                self.trys += 1
+                if self.trys <= self.retry:
+                    print("retesting... %d" % self.trys)
+                    test=copy.copy(test)
+                    doc = test._testMethodDoc
+                    if doc.find('_retry')!=-1:
+                        doc = doc[:doc.find('_retry')]
+                    desc ="%s_retry:%d" %(doc, self.trys)
+                    if not PY3K:
+                        if isinstance(desc, str):
+                            desc = desc.decode("utf-8")
+                    test._testMethodDoc = desc
+                    test(self)
+                else:
+                    self.status = 0
+                    self.trys = 0
         self.complete_output()
 
     def addSuccess(self, test):
-        if test not in self.subtestlist:
-            self.success_count += 1
-            TestResult.addSuccess(self, test)
-            output = self.complete_output()
-            self.result.append((0, test, output, ''))
-            if self.verbosity > 1:
-                sys.stderr.write('ok ')
-                sys.stderr.write(str(test))
-                sys.stderr.write('\n')
-            else:
-                sys.stderr.write('.')
+        self.success_count += 1
+        self.status = 0
+        TestResult.addSuccess(self, test)
+        output = self.complete_output()
+        self.result.append((0, test, output, ''))
+        if self.verbosity > 1:
+            sys.stderr.write('ok ')
+            sys.stderr.write(str(test))
+            sys.stderr.write('\n')
+        else:
+            sys.stderr.write('.')
 
     def addError(self, test, err):
         self.error_count += 1
+        self.status = 1
         TestResult.addError(self, test, err)
         _, _exc_str = self.errors[-1]
         output = self.complete_output()
         self.result.append((2, test, output, _exc_str))
+        try:
+            driver = getattr(test, "driver")
+            test.img = driver.get_screenshot_as_base64()
+        except AttributeError:
+            test.img = ""
         if self.verbosity > 1:
             sys.stderr.write('E  ')
             sys.stderr.write(str(test))
@@ -656,10 +703,16 @@ class _TestResult(TestResult):
 
     def addFailure(self, test, err):
         self.failure_count += 1
+        self.status = 1
         TestResult.addFailure(self, test, err)
         _, _exc_str = self.failures[-1]
         output = self.complete_output()
         self.result.append((1, test, output, _exc_str))
+        try:
+            driver = getattr(test, "driver")
+#            test.img = driver.get_screenshot_as_base64()
+        except AttributeError:
+            test.img = ""
         if self.verbosity > 1:
             sys.stderr.write('F  ')
             sys.stderr.write(str(test))
@@ -667,55 +720,14 @@ class _TestResult(TestResult):
         else:
             sys.stderr.write('F')
 
-    def addSubTest(self, test, subtest, err):
-        if err is not None:
-            if getattr(self, 'failfast', False):
-                self.stop()
-            if issubclass(err[0], test.failureException):
-                self.failure_count += 1
-                errors = self.failures
-                errors.append((subtest, self._exc_info_to_string(err, subtest)))
-                output = self.complete_output()
-                self.result.append((1, test, output + '\nSubTestCase Failed:\n' + str(subtest),
-                                    self._exc_info_to_string(err, subtest)))
-                if self.verbosity > 1:
-                    sys.stderr.write('F  ')
-                    sys.stderr.write(str(subtest))
-                    sys.stderr.write('\n')
-                else:
-                    sys.stderr.write('F')
-            else:
-                self.error_count += 1
-                errors = self.errors
-                errors.append((subtest, self._exc_info_to_string(err, subtest)))
-                output = self.complete_output()
-                self.result.append(
-                    (2, test, output + '\nSubTestCase Error:\n' + str(subtest), self._exc_info_to_string(err, subtest)))
-                if self.verbosity > 1:
-                    sys.stderr.write('E  ')
-                    sys.stderr.write(str(subtest))
-                    sys.stderr.write('\n')
-                else:
-                    sys.stderr.write('E')
-            self._mirrorOutput = True
-        else:
-            self.subtestlist.append(subtest)
-            self.subtestlist.append(test)
-            self.success_count += 1
-            output = self.complete_output()
-            self.result.append((0, test, output + '\nSubTestCase Pass:\n' + str(subtest), ''))
-            if self.verbosity > 1:
-                sys.stderr.write('ok ')
-                sys.stderr.write(str(subtest))
-                sys.stderr.write('\n')
-            else:
-                sys.stderr.write('.')
-
 
 class HTMLTestRunner(Template_mixin):
+    """
+    """
 
-    def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None):
+    def __init__(self, stream=sys.stdout, verbosity=1, title=None, description=None, retry=0):
         self.stream = stream
+        self.retry = retry
         self.verbosity = verbosity
         if title is None:
             self.title = self.DEFAULT_TITLE
@@ -730,11 +742,17 @@ class HTMLTestRunner(Template_mixin):
 
     def run(self, test):
         "Run the given test case or test suite."
-        result = _TestResult(self.verbosity)
+        result = _TestResult(self.verbosity, self.retry)
         test(result)
         self.stopTime = datetime.datetime.now()
         self.generateReport(test, result)
-        print('\nTime Elapsed: %s' % (self.stopTime-self.startTime), file=sys.stderr)
+        if PY3K:
+            # for python3
+            # print('\nTime Elapsed: %s' % (self.stopTime - self.startTime),file=sys.stderr)
+            output = '\nTime Elapsed: %s' % (self.stopTime - self.startTime)
+            sys.stderr.write(output)
+        else:
+            print >> sys.stderr, '\nTime Elapsed: %s' % (self.stopTime - self.startTime)
         return result
 
     def sortResult(self, result_list):
@@ -742,12 +760,12 @@ class HTMLTestRunner(Template_mixin):
         # Here at least we want to group them together by class.
         rmap = {}
         classes = []
-        for n,t,o,e in result_list:
+        for n, t, o, e in result_list:
             cls = t.__class__
-            if cls not in rmap:
+            if not cls in rmap:
                 rmap[cls] = []
                 classes.append(cls)
-            rmap[cls].append((n,t,o,e))
+            rmap[cls].append((n, t, o, e))
         r = [(cls, rmap[cls]) for cls in classes]
         return r
 
@@ -759,37 +777,41 @@ class HTMLTestRunner(Template_mixin):
         startTime = str(self.startTime)[:19]
         duration = str(self.stopTime - self.startTime)
         status = []
-        if result.success_count: status.append(u'通过 %s' % result.success_count)
-        if result.failure_count: status.append(u'失败 %s' % result.failure_count)
-        if result.error_count:   status.append(u'错误 %s' % result.error_count  )
+        if result.success_count:
+            status.append(u'<span class="tj passCase">Pass</span>%s' % result.success_count)
+        if result.failure_count:
+            status.append(u'<span class="tj failCase">Failure</span>%s' % result.failure_count)
+        if result.error_count:
+            status.append(u'<span class="tj errorCase">Error</span>%s' % result.error_count)
         if status:
             status = ' '.join(status)
         else:
             status = 'none'
         return [
             (u'开始时间', startTime),
-            (u'运行时长', duration),
+            (u'耗时', duration),
             (u'状态', status),
         ]
 
     def generateReport(self, test, result):
         report_attrs = self.getReportAttributes(result)
-        generator = 'HTMLTestRunner12 %s' % __version__
+        generator = 'HTMLTestRunner %s' % __version__
         stylesheet = self._generate_stylesheet()
         heading = self._generate_heading(report_attrs)
         report = self._generate_report(result)
         ending = self._generate_ending()
-        chart = self._generate_chart(result)
         output = self.HTML_TMPL % dict(
-            title = saxutils.escape(self.title),
-            generator = generator,
-            stylesheet = stylesheet,
-            heading = heading,
-            report = report,
-            ending = ending,
-            chart_script = chart
+            title=saxutils.escape(self.title),
+            generator=generator,
+            stylesheet=stylesheet,
+            heading=heading,
+            report=report,
+            ending=ending,
         )
-        self.stream.write(output.encode('utf8'))
+        if PY3K:
+            self.stream.write(output.encode())
+        else:
+            self.stream.write(output.encode('utf8'))
 
     def _generate_stylesheet(self):
         return self.STYLESHEET_TMPL
@@ -798,14 +820,14 @@ class HTMLTestRunner(Template_mixin):
         a_lines = []
         for name, value in report_attrs:
             line = self.HEADING_ATTRIBUTE_TMPL % dict(
-                name = saxutils.escape(name),
-                value = saxutils.escape(value),
+                name=name,
+                value=value,
             )
             a_lines.append(line)
         heading = self.HEADING_TMPL % dict(
-            title = saxutils.escape(self.title),
-            parameters = ''.join(a_lines),
-            description = saxutils.escape(self.description),
+            title=saxutils.escape(self.title),
+            parameters=''.join(a_lines),
+            description=saxutils.escape(self.description),
         )
         return heading
 
@@ -815,10 +837,13 @@ class HTMLTestRunner(Template_mixin):
         for cid, (cls, cls_results) in enumerate(sortedResult):
             # subtotal for a class
             np = nf = ne = 0
-            for n,t,o,e in cls_results:
-                if n == 0: np += 1
-                elif n == 1: nf += 1
-                else: ne += 1
+            for n, t, o, e in cls_results:
+                if n == 0:
+                    np += 1
+                elif n == 1:
+                    nf += 1
+                else:
+                    ne += 1
 
             # format class description
             if cls.__module__ == "__main__":
@@ -829,62 +854,88 @@ class HTMLTestRunner(Template_mixin):
             desc = doc and '%s: %s' % (name, doc) or name
 
             row = self.REPORT_CLASS_TMPL % dict(
-                style = ne > 0 and 'errorClass' or nf > 0 and 'failClass' or 'passClass',
-                desc = desc,
-                count = np+nf+ne,
-                Pass = np,
-                fail = nf,
-                error = ne,
-                cid = 'c%s' % (cid+1),
+                style=ne > 0 and 'errorClass' or nf > 0 and 'failClass' or 'passClass',
+                desc=desc,
+                count=np + nf + ne,
+                Pass=np,
+                fail=nf,
+                error=ne,
+                cid='c%s' % (cid + 1),
             )
             rows.append(row)
 
-            for tid, (n,t,o,e) in enumerate(cls_results):
+            for tid, (n, t, o, e) in enumerate(cls_results):
                 self._generate_report_test(rows, cid, tid, n, t, o, e)
 
         report = self.REPORT_TMPL % dict(
-            test_list = ''.join(rows),
-            count = str(result.success_count+result.failure_count+result.error_count),
-            Pass = str(result.success_count),
-            fail = str(result.failure_count),
-            error = str(result.error_count),
-            image= str(result.image_view),
-        )
-        return report
-
-    def _generate_chart(self, result):
-        chart = self.ECHARTS_SCRIPT % dict(
+            test_list=u''.join(rows),
+            count=str(result.success_count + result.failure_count + result.error_count),
             Pass=str(result.success_count),
             fail=str(result.failure_count),
             error=str(result.error_count),
         )
-        return chart
+        return report
 
     def _generate_report_test(self, rows, cid, tid, n, t, o, e):
         # e.g. 'pt1.1', 'ft1.1', etc
         has_output = bool(o or e)
-        tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid+1,tid+1)
+        tid = (n == 0 and 'p' or 'f') + 't%s.%s' % (cid + 1, tid + 1)
         name = t.id().split('.')[-1]
-        doc = t.shortDescription() or ""
+        if self.verbosity > 1:
+            doc = t.shortDescription() or ""
+        else:
+            doc = ""
+
         desc = doc and ('%s: %s' % (name, doc)) or name
+        if not PY3K:
+            if isinstance(desc, str):
+                desc = desc.decode("utf-8")
         tmpl = has_output and self.REPORT_TEST_WITH_OUTPUT_TMPL or self.REPORT_TEST_NO_OUTPUT_TMPL
+
+        # o and e should be byte string because they are collected from stdout and stderr?
+        if isinstance(o, str):
+            # uo = unicode(o.encode('string_escape'))
+            if PY3K:
+                uo = o
+            else:
+                uo = o.decode('utf-8', 'ignore')
+        else:
+            uo = o
+        if isinstance(e, str):
+            # ue = unicode(e.encode('string_escape'))
+            if PY3K:
+                ue = e
+            elif e.find("AssertionError") != -1:
+                es = e.decode('utf-8', 'ignore').split('\n')
+                es[-2] = es[-2].decode('unicode_escape')
+                ue = u"\n".join(es)
+            else:
+                ue = e.decode('utf-8', 'ignore')
+        else:
+            ue = e
 
         script = self.REPORT_TEST_OUTPUT_TMPL % dict(
             id=tid,
-            output=saxutils.escape(o+e),
+            output=saxutils.escape(uo + ue),
         )
-        image = self.REPORT_TEST_OUTPUT_IMAGE % dict(
-            screenshot=saxutils.escape(o + e)
-        )
+        if t.img:
+            img = u"""
+            <a href="#" onclick="show_shots(this)">显示截图</a>
+            <div class="screenshots">
+            <a  class="close_shots" onclick="close_shots(this)">X</a>
+            <img src="data:image/jpg;base64,%s" class="img"/>
+            </div>""" % t.img
+        else:
+            img = """"""
 
         row = tmpl % dict(
             tid=tid,
             Class=(n == 0 and 'hiddenRow' or 'none'),
-            style=(n == 2 and 'errorCase' or (n == 1 and 'failCase' or 'none')),
+            style=n == 2 and 'errorCase' or (n == 1 and 'failCase' or 'passCase'),
             desc=desc,
             script=script,
-            image=image[image.find("image"):(int(image.find("png")) + 3)],
             status=self.STATUS[n],
+            img=img,
         )
         rows.append(row)
         if not has_output:
@@ -906,13 +957,15 @@ class TestProgram(unittest.TestProgram):
     A variation of the unittest.TestProgram. Please refer to the base
     class for command line parameters.
     """
+
     def runTests(self):
-        # Pick HTMLTestRunner12 as the default test runner.
+        # Pick HTMLTestRunner as the default test runner.
         # base class's testRunner parameter is not useful because it means
-        # we have to instantiate HTMLTestRunner12 before we know self.verbosity.
+        # we have to instantiate HTMLTestRunner before we know self.verbosity.
         if self.testRunner is None:
             self.testRunner = HTMLTestRunner(verbosity=self.verbosity)
         unittest.TestProgram.runTests(self)
+
 
 main = TestProgram
 

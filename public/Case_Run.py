@@ -3,17 +3,16 @@
 # @Author  : Leo_Peng
 # @File    : Case_Run.py
 # @Software: PyCharm
-import unittest
-from public.suite import Suite
+#import unittest
+from public.Suites import *
 from public import HTMLTestRunner
 import os,time
 path=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-print(path)
 case_path =path+'/TestCase'
 result =path+'/Result/'
 def Creatsuite():
     #定义单元测试容器
-    testunit = Suite()
+    testunit = Suit()
 
     #定搜索用例文件的方法
     discover = unittest.defaultTestLoader.discover(case_path, pattern='Test_*.py', top_level_dir=None)
@@ -22,7 +21,6 @@ def Creatsuite():
     for test_suite in discover:
         for casename in test_suite:
             testunit.addTest(casename)
-        print (testunit)
     return testunit
 
 test_case = Creatsuite()
